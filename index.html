@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>용정 만남의날 시간표 편성</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Yongjeong Meet Day</p>
+        <h1>용정 만남의날 시간표 편성</h1>
+      </div>
+      <div class="header-actions">
+        <span id="firebaseStatus" class="sync-pill">로컬 저장</span>
+        <button id="sampleCsvBtn" type="button" class="ghost admin-only">CSV 예시 받기</button>
+        <button id="resetBtn" type="button" class="danger admin-only">초기화</button>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero panel">
+        <div>
+          <h2>조회 페이지와 관리자 페이지를 분리했습니다.</h2>
+          <p>조회는 바로 볼 수 있고, 강의 입력과 배정 수정은 관리자 비밀번호 입력 후 사용할 수 있습니다.</p>
+        </div>
+        <div id="status" class="status">조회 페이지는 바로 이용할 수 있습니다.</div>
+      </section>
+
+      <nav class="mode-tabs" aria-label="페이지 구분">
+        <button type="button" class="mode-button active" data-mode-target="viewer">조회 페이지</button>
+        <button type="button" class="mode-button" data-mode-target="admin">관리자</button>
+      </nav>
+
+      <section id="mode-viewer" class="mode-panel active">
+        <nav class="tabs" aria-label="조회 탭">
+          <button type="button" class="tab-button active" data-tab-group="viewer" data-tab-target="student-view">
+            재학생 기준 보기
+          </button>
+          <button type="button" class="tab-button" data-tab-group="viewer" data-tab-target="lecture-view">
+            졸업생 기준 보기
+          </button>
+        </nav>
+
+        <section id="tab-student-view" class="tab-panel active" data-tab-group-panel="viewer">
+          <div class="layout single-column">
+            <section class="panel result-panel">
+              <div class="section-head">
+                <div>
+                  <h2>재학생 기준 배정 보기</h2>
+                  <p>학급별로 학생 시간표를 확인합니다.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>학급</th>
+                      <th>이름</th>
+                      <th>1교시</th>
+                      <th>2교시</th>
+                      <th>3교시</th>
+                    </tr>
+                  </thead>
+                  <tbody id="studentScheduleBody">
+                    <tr>
+                      <td colspan="5" class="blank">아직 배정 결과가 없습니다.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="tab-lecture-view" class="tab-panel" data-tab-group-panel="viewer">
+          <div class="layout single-column">
+            <section class="panel result-panel">
+              <div class="section-head">
+                <div>
+                  <h2>졸업생 기준 배정 보기</h2>
+                  <p>졸업생별로 1교시, 2교시, 3교시 명단을 확인합니다.</p>
+                </div>
+              </div>
+
+              <div id="speakerScheduleList" class="speaker-schedule-list empty">아직 배정 결과가 없습니다.</div>
+            </section>
+          </div>
+        </section>
+      </section>
+
+      <section id="mode-admin" class="mode-panel">
+        <section id="adminLockPanel" class="panel auth-panel">
+          <div class="section-head">
+            <div>
+              <h2>관리자 로그인</h2>
+              <p>강의 입력과 재학생 배정 수정을 하려면 비밀번호를 입력하세요.</p>
+            </div>
+          </div>
+
+          <form id="adminLoginForm" class="admin-login-form">
+            <label>
+              관리자 비밀번호
+              <input id="adminPassword" type="password" placeholder="비밀번호 입력" autocomplete="current-password" />
+            </label>
+            <button type="submit" class="primary">관리자 열기</button>
+          </form>
+          <p id="adminLockMessage" class="auth-message">조회 페이지는 누구나 볼 수 있습니다.</p>
+        </section>
+
+        <section id="adminContent" class="admin-content hidden">
+          <div class="admin-head">
+            <span class="pill">관리자 모드</span>
+            <button id="adminLogoutBtn" type="button" class="ghost">관리자 잠금</button>
+          </div>
+
+          <nav class="tabs" aria-label="관리 탭">
+            <button type="button" class="tab-button active" data-tab-group="admin" data-tab-target="lectures">
+              강의 입력
+            </button>
+            <button type="button" class="tab-button" data-tab-group="admin" data-tab-target="students">
+              재학생 배정
+            </button>
+          </nav>
+
+          <section id="tab-lectures" class="tab-panel active" data-tab-group-panel="admin">
+            <div class="layout single-column">
+              <section class="panel lecture-panel" aria-labelledby="lectureTitle">
+                <div class="section-head">
+                  <div>
+                    <h2 id="lectureTitle">강의 입력</h2>
+                    <p>졸업생 강의와 교시별 운영 조건을 입력하세요.</p>
+                  </div>
+                  <div class="section-tools">
+                    <span id="lectureCount" class="pill">0개 강의</span>
+                    <button id="sampleSetupBtn" type="button" class="ghost">검증용 강의 불러오기</button>
+                  </div>
+                </div>
+
+                <form id="lectureForm" class="lecture-form">
+                  <label>
+                    졸업생 이름
+                    <input id="speakerName" type="text" placeholder="예: 김용정" required />
+                  </label>
+
+                  <fieldset>
+                    <legend>수업 불가능한 교시</legend>
+                    <div class="checks">
+                      <label><input name="unavailable" type="checkbox" value="1" /> 1교시</label>
+                      <label><input name="unavailable" type="checkbox" value="2" /> 2교시</label>
+                      <label><input name="unavailable" type="checkbox" value="3" /> 3교시</label>
+                    </div>
+                  </fieldset>
+
+                  <div class="capacity-grid">
+                    <label>
+                      1교시 최대 인원
+                      <input id="cap1" type="number" min="1" max="30" value="20" required />
+                    </label>
+                    <label>
+                      2교시 최대 인원
+                      <input id="cap2" type="number" min="1" max="30" value="20" required />
+                    </label>
+                    <label>
+                      3교시 최대 인원
+                      <input id="cap3" type="number" min="1" max="30" value="20" required />
+                    </label>
+                  </div>
+
+                  <button type="submit" class="primary">강의 추가</button>
+                </form>
+
+                <div class="lecture-list-wrap">
+                  <h3>등록된 강의</h3>
+                  <div id="lectureList" class="lecture-list empty">등록된 강의가 없습니다.</div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section id="tab-students" class="tab-panel" data-tab-group-panel="admin">
+            <div class="layout single-column">
+              <section class="panel assign-panel" aria-labelledby="assignTitle">
+                <div class="section-head">
+                  <div>
+                    <h2 id="assignTitle">재학생 배정</h2>
+                    <p>CSV 업로드 후 표에서 이름, 학년, 반, 희망 순위를 직접 수정할 수 있습니다.</p>
+                  </div>
+                </div>
+
+                <div class="upload-box">
+                  <input id="csvInput" type="file" accept=".csv,text/csv" />
+                  <div>
+                    <strong>CSV 업로드</strong>
+                    <p>열 순서: 이름, 학년, 반, 1순위, 2순위, 3순위. 순서는 무시하고 선택한 3개 강의로 처리합니다.</p>
+                  </div>
+                </div>
+
+                <div class="toolbar">
+                  <button id="assignBtn" type="button" class="primary">배정 실행</button>
+                  <button id="downloadBtn" type="button" class="ghost" disabled>결과 CSV 다운로드</button>
+                </div>
+
+                <section class="editor-section">
+                  <div class="section-head compact">
+                  <div>
+                    <h3>재학생 입력 수정</h3>
+                    <p>순위 칸에는 강의 번호 또는 졸업생 이름을 입력할 수 있습니다. 1, 2, 3순위는 교시 의미가 아닙니다.</p>
+                  </div>
+                    <span id="studentCount" class="pill">0명</span>
+                  </div>
+
+                  <div class="table-wrap">
+                    <table class="student-edit-table">
+                      <thead>
+                        <tr>
+                          <th>이름</th>
+                          <th>학년</th>
+                          <th>반</th>
+                          <th>1순위</th>
+                          <th>2순위</th>
+                          <th>3순위</th>
+                        </tr>
+                      </thead>
+                      <tbody id="studentEditorBody">
+                        <tr>
+                          <td colspan="6" class="blank">아직 학생 데이터가 없습니다.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section class="unassigned">
+                  <h3>미배정 교시</h3>
+                  <div id="unassignedList" class="empty">미배정 없음</div>
+                </section>
+              </section>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./firebase-config.js"></script>
+    <script src="./firebase-config.local.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

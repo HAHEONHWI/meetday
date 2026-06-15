@@ -1,0 +1,2 @@
+window.MEETDAY_FIREBASE_CONFIG = null;
+window.MEETDAY_ADMIN_PASSWORD = null;
